@@ -28,6 +28,7 @@ import com.google.appengine.api.users.UserServiceFactory;
 
 import java.io.IOException;
 import java.util.Date;
+import java.util.List;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +45,7 @@ import com.googlecode.objectify.ObjectifyService;
  */
 public class SignGuestbookServlet extends HttpServlet {
 
+	private final int MAX_STORAGE_CAPACITY = 5;
   // Process the http POST of the form
   @Override
   public void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -62,6 +64,21 @@ public class SignGuestbookServlet extends HttpServlet {
 
     // Use Objectify to save the greeting and now() is used to make the call synchronously as we
     // will immediately get a new page using redirect and we want the data to be present.
+    
+    /*This codeblock deletes the whole storage if more than MAX_STORAGE_CAPACITY elements are
+     * stored in the ofy() storage. 
+    if(ObjectifyService.ofy().load().count() > MAX_STORAGE_CAPACITY){
+    	List<Greeting> keys = ObjectifyService.ofy().load().type(Greeting.class).list();
+    	ObjectifyService.ofy().delete().entities(keys).now();
+    }
+    */
+    
+    //If more than MAX_STORAGE_CAPACITY elements are in the storage, 
+    //delete the oldest element ( .order("date") )
+    if(ObjectifyService.ofy().load().count() >= MAX_STORAGE_CAPACITY){
+    	 Greeting elem = ObjectifyService.ofy().load().type(Greeting.class).order("date").list().get(0);
+    	 ObjectifyService.ofy().delete().entity(elem);
+    }
     ObjectifyService.ofy().save().entity(greeting).now();
 
     resp.sendRedirect("/guestbook.jsp?guestbookName=" + guestbookName);
